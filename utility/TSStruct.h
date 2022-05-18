@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:32:59
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-17 21:07:00
+ * @LastEditTime: 2022-05-18 12:08:46
  */
 
 #pragma once
@@ -41,9 +41,25 @@
 typedef enum runtime {
     CPU = 0,
     GPU,
+    GPU_16,
     DSP,
     AIP
 }runtime_t;
+
+template <typename Dtype>
+struct DPair {
+    Dtype x; Dtype y;
+
+    DPair() {}
+    ~DPair() {}
+
+    DPair(Dtype v1, Dtype v2) {
+        x = v1;
+        y = v2;
+    }
+};
+
+typedef DPair<int> pairInt;
 
 /**
  * @brief Basic data structure group.

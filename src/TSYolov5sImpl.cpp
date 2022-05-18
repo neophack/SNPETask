@@ -9,10 +9,11 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:28:01
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-17 21:25:58
+ * @LastEditTime: 2022-05-18 17:16:53
  */
 
-#include  <math.h>
+#include <math.h>
+#include <algorithm>
 
 #include <opencv2/opencv.hpp>
 
@@ -28,7 +29,20 @@ TSObjectDetectionImpl::~TSObjectDetectionImpl() {
 
 bool TSObjectDetectionImpl::Initialize(const std::string& model_path, const runtime_t runtime)
 {
+    m_task = std::move(std::unique_ptr<snpetask::SNPETask()>(new snpetask::SNPETask()));
 
+    m_outputLayers.push_back(OUTPUT_NODE0);        // stride: 8
+    m_outputLayers.push_back(OUTPUT_NODE1);        // stride: 16  
+    m_outputLayers.push_back(OUTPUT_NODE2);        // stride: 32
+    m_outputTensors.push_back(OUTPUT_TENSOR0);     // 1*80*80*3*85
+    m_outputTensors.push_back(OUTPUT_TENSOR1);     // 1*40*40*3*85
+    m_outputTensors.push_back(OUTPUT_TENSOR2);     // 1*20*20*3*85
+
+    m_task->setOutputLayers(m_outputLayers);
+
+    m_task->init(model_path, runtime);
+
+    m_output = new float[MODEL_OUTPUT_GRIDS * MODEL_OUTPUT_CHANNEL];
 
     m_isInit = true;
     return true;
@@ -41,69 +55,67 @@ bool TSObjectDetectionImpl::DeInitialize()
         m_task = nullptr;
     }
 
+    if (m_output) {
+        delete[] m_output;
+        m_output = nullptr;
+    }
+
     m_isInit = false;
     return true;
 }
 
 bool TSObjectDetectionImpl::PreProcess(const ts::TSImgData& image)
 {
-    auto input_shape = m_task->getInputShape();
+    auto inputShape = m_task->getInputShape();
 
-    size_t batch = input_shape[0];
-    size_t input_h = input_shape[1];
-    size_t input_w = input_shape[2];
-    size_t channel = input_shape[3];
-
-    int data_type;
-    if (m_bufferType == ts::BufferType::HEAP) {
-        data_type = CV_32FC3;
-    } else if (m_bufferType == ts::BufferType::DMA_BUF) {
-        data_type = CV_8UC3;
-    }
+    size_t batch = inputShape[0];
+    size_t inputHeight = inputShape[1];
+    size_t inputWidth = inputShape[2];
+    size_t channel = inputShape[3];
 
     if (m_task->getInputTensor() == nullptr) {
         TS_ERROR_LOG("Empty input tensor");
         return false;
     }
 
-    cv::Mat input(input_h, input_w, data_type, m_task->getInputTensor(), input_w * channel);
+    cv::Mat input(inputHeight, inputWidth, CV_32FC3, m_task->getInputTensor(INPUT_TENSOR), inputWidth * channel);
 
     if (image.empty()) {
         TS_ERROR_LOG("Invalid image!");
         return false;
     }
 
-    int img_format = image.format();
-    if (img_format != TYPE_BGR_U8 && img_format != TYPE_RGB_U8) {
-        TS_ERROR_LOG("Invaild image format %d, expected to be rgb or bgr!", img_format);
+    int imgFormat = image.format();
+    if (imgFormat != TYPE_BGR_U8 && imgFormat != TYPE_RGB_U8) {
+        TS_ERROR_LOG("Invaild image format %d, expected to be rgb or bgr!", imgFormat);
         return false;
     }
 
-    int img_w = image.width();
-    int img_h = image.height();
-    float scale_w = (1.0f * input_w) / img_w;
-    float scale_h = (1.0f * input_h) / img_h;
-    m_scaleWidth =  scale_w;
-    m_scaleHeight = scale_h;
+    int imgWidth = image.width();
+    int imgHeight = image.height();
+    
+    m_scale = std::min(inputHeight /(float)imgWidth, inputWidth / (float)imgHeight);
+    int scaledWidth = imgWidth * scale;
+    int scaledHeight = imgHeight * scale;
+    m_xOffset = (inputWidth - scaledWidth) / 2;
+    m_yOffset = (inputHeight - scaledHeight) / 2;
 
-    cv::Mat image_tmp(img_h, img_w, CV_8UC3, image.data(), image.stride());
-    if (img_format == TYPE_BGR_U8) {
+    cv::Mat image_tmp(imgHeight, imgWidth, CV_8UC3, image.data(), image.stride());
+    if (imgFormat == TYPE_BGR_U8) {
         cv::cvtColor(image_tmp, image_tmp, cv::COLOR_BGR2RGB);
     }
 
-    cv::Mat crop(input, cv::Rect(0, 0, input_w, input_h));
-    cv::Mat resize_img;
-    cv::resize(image_tmp, resize_img, cv::Size(input_w, input_h), cv::INTER_LINEAR);
-    if (m_bufferType == ts::BufferType::HEAP) {
-        resize_img.convertTo(crop, CV_32FC3);
-    } else if (m_bufferType == ts::BufferType::DMA_BUF) {
-        resize_img.convertTo(crop, CV_8UC3);
-    }
-    crop = (crop - 127.5) / 127.5;
+    cv::Mat inputMat(inputHeight, inputWidth, CV_8UC3, cv::Scalar(128, 128, 128));
+    cv::Mat roiMat(inputMat, cv::Rect(m_xOffset, m_yOffset, scaledWidth, scaledHeight));
+    cv::resize(image_tmp, roiMat, cv::Size(scaledWidth, scaledHeight), cv::INTER_LINEAR);
+
+    inputMat.convertTo(input, CV_32FC3);
+    input /= 255.0f;
+
 }
 
 bool TSObjectDetectionImpl::Detect(const ts::TSImgData& image,
-    std::vector<ts::ObjectData>& vec_res)
+    std::vector<ts::ObjectData>& results)
 {
 
     PreProcess(image);
@@ -113,71 +125,90 @@ bool TSObjectDetectionImpl::Detect(const ts::TSImgData& image,
         return false;
     }
 
-    PostProcess(vec_res);
+    PostProcess(results);
 
     return true;
 }
 
-bool TSObjectDetectionImpl::PostProcess(std::vector<ts::ObjectData> &vec_res)
+bool TSObjectDetectionImpl::PostProcess(std::vector<ts::ObjectData> &results)
 {
-    auto input_shape = m_task->getInputShape();
-    size_t mHeight = input_shape[1];
-    size_t mWidth = input_shape[2];
+    float strides[3] = {8, 16, 32};
+    float anchorGrid[][6] = {
+        {10, 13, 16, 30, 33, 23},       // 8*8
+        {30, 61, 62, 45, 59, 119},      // 16*16
+        {116, 90, 156, 198, 373, 326},  // 32*32
+    };
 
-    float mStrides[3] = {8, 16, 32};
     std::vector<ts::ObjectData> winList;
 
+    // copy all outputs to one array.
+    // [80 * 80 * 3 * 85]----\
+    // [40 * 40 * 3 * 85]--------> [25200 * 85]
+    // [20 * 20 * 3 * 85]----/
     for (size_t i = 0; i < 3; i++) {
-        auto output_shape = m_task->getOutputShape(i * 2);
-        const float *out_score = m_task->getOutputTensor(i * 2 + 0);
-        const float *out_loc = m_task->getOutputTensor(i * 2 + 1);
+        auto outputShape = m_task->getOutputShape(m_outputTensors[i]);
+        const float *predOutput = m_task->getOutputTensor(m_outputTensors[i]);
+        float* tmpOutput = m_output;
 
-        int batch = output_shape[0];
-        int height = output_shape[1];
-        int width = output_shape[2];
-        int channel = output_shape[3];
+        int batch = outputShape[0];
+        int height = outputShape[1];
+        int width = outputShape[2];
+        int channel = outputShape[3];
 
-        float conf = 0;
-        float max_idx = 0;
-        float preXCenter = 0;
-        float preYCenter = 0;
-
-        for (int j = 0; j < height; j++) {
-            preYCenter = j * mStrides[i] + mStrides[i] / 2.0;
-            for (int k = 0; k < width; k++) {
-                preXCenter = k * mStrides[i] + mStrides[i] / 2.0;
-                conf = out_score[j * width * channel + k * channel + 0];
-                max_idx = 0;
-                for (int m = 1; m < channel; m++) {
-                    float tmp_score = out_score[j * width * channel + k * channel + m];
-                    if (tmp_score > conf) {
-                        conf = tmp_score;
-                        max_idx = m;
+        for (int j = 0; j < height; j++) {      // 80/40/20
+            for (int k = 0; k < width; k++) {   // 80/40/20
+                int anchorIdx = 0;
+                for (int l = 0; l < 3; l++) {   // 3
+                    for (int m = 0; m < channel / 3; m++) {     // 85
+                        if (m < 2) {
+                            float value = *predOutput;
+                            float grid_value = m == 0 ? k : j;
+                            *tmpOutput = (value * 2 - 0.5 + grid_value) * stride[i];
+                        } else if (m < 4) {
+                            float value = *predOutput;
+                            *tmpOutput = value * value * 4 * anchor_grid[i][anchor_index++];
+                        } else {
+                            *tmpOutput = *predOutput;
+                        }
+                        tmpOutput++;
+                        predOutput++;
                     }
                 }
+            }
+        }
+    }
+    
+    std::vector<int> boxIndexs;
+    std::vector<float> boxConfidences;
+    std::vector<ts::ObjectData> winList;
 
-                if (conf >= m_confThresh) {
-                    ts::ObjectData rect;
-                    rect.confidence = conf;
-                    rect.label = max_idx;
+    for (int i = 0; i< MODEL_OUTPUT_GRIDS; i++) {
+        float boxConfidence = m_output[i * MODEL_OUTPUT_CHANNEL + 4];
+        if (boxConfidence > 0.001) {
+            boxIndexs.push_back(i);
+            boxConfidences.push_back(boxConfidence);
+        }
+    }
 
-                    float xMin = preXCenter - out_loc[(j * width + k) * 4 + 0] * mStrides[i];
-                    float yMin = preYCenter - out_loc[(j * width + k) * 4 + 1] * mStrides[i];
-                    float xMax = preXCenter + out_loc[(j * width + k) * 4 + 2] * mStrides[i];
-                    float yMax = preYCenter + out_loc[(j * width + k) * 4 + 3] * mStrides[i];
+    float curMaxScore = 0.0f;
+    float curMinScore = 0.0f;
 
-                    if (xMin < mWidth - 1 && xMax > 0 && yMin < mHeight - 1 && yMax > 0) {
-                        xMin /= m_scaleWidth;
-                        yMin /= m_scaleHeight;
-                        xMax /= m_scaleWidth;
-                        yMax /= m_scaleHeight;
-                        rect.x = std::max(0, static_cast<int>(xMin));
-                        rect.y = std::max(0, static_cast<int>(yMin));
-                        rect.width  = xMax - rect.x;
-                        rect.height = yMax - rect.y;
-                        winList.push_back(rect);
-                    }
-                }
+    for (size_t i = 0; i < boxIndexs.size(); i++) {
+        int curIdx = boxIndexs[i];
+        float curBoxConfidence = boxConfidences[i];
+
+        for (int j = 5; j < MODEL_OUTPUT_CHANNEL; j++) {
+            float score = curBoxConfidence * m_output[curIdx * MODEL_OUTPUT_CHANNEL + j];
+            if (score > m_confThresh) {
+                ts::ObjectData rect;
+                rect.width = m_output[curIdx * MODEL_OUTPUT_CHANNEL + 2];
+                rect.height = m_output[curIdx * MODEL_OUTPUT_CHANNEL + 3];
+                rect.x = std::min(0, static_cast<int>(m_output[curIdx * MODEL_OUTPUT_CHANNEL] - w / 2));
+                rect.y = std::min(0, static_cast<int>(m_output[curIdx * MODEL_OUTPUT_CHANNEL + 1] - h / 2));
+                rect.confidence = score;
+                rect.label = j - 5;
+
+                winList.push_back(rect);
             }
         }
     }
@@ -186,8 +217,9 @@ bool TSObjectDetectionImpl::PostProcess(std::vector<ts::ObjectData> &vec_res)
 
     for (size_t i = 0; i < winList.size(); i++) {
         if (winList[i].width >= m_minBoxBorder || winList[i].height >= m_minBoxBorder) {
-            vec_res.push_back(winList[i]);
+            results.push_back(winList[i]);
         }
     }
+
     return true;
 }

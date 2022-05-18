@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:26:56
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-17 21:20:47
+ * @LastEditTime: 2022-05-18 14:37:51
  */
 
 #include <unistd.h>
@@ -56,10 +56,10 @@ bool TSObjectDetection::IsInitialized()
     return static_cast<TSObjectDetectionImpl*>(impl)->IsInitialized();
 }
 
-bool TSObjectDetection::Detect(const ts::TSImgData& image, std::vector<ts::ObjectData>& vec_res)
+bool TSObjectDetection::Detect(const ts::TSImgData& image, std::vector<ts::ObjectData>& results)
 {
     if (nullptr != impl && IsInitialized()) {
-        auto ret = static_cast<TSObjectDetectionImpl*>(impl)->Detect(image, vec_res);
+        auto ret = static_cast<TSObjectDetectionImpl*>(impl)->Detect(image, results);
         return ret;
     } else {
         TS_ERROR_LOG("TSObjectDetection::Detect failed caused by incompleted initialization!");

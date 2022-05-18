@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:26:39
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-17 21:10:32
+ * @LastEditTime: 2022-05-18 14:37:41
  */
 
 #ifndef __TS_YOLOV5S_H__
@@ -93,10 +93,10 @@ public:
      * @brief: Core method of object detection.
      * @Author: Ricardo Lu
      * @param {ts::TSImgData&} image: A RGB format image needs to be detected.
-     * @param {std::vector<std::vector<ts::ObjectData> >&} vec_res: Detection results vector for each image.
+     * @param {std::vector<std::vector<ts::ObjectData> >&} results: Detection results vector for each image.
      * @return {bool} true if detect successfullly, false if failed.
      */
-    bool Detect(const ts::TSImgData& image, std::vector<ts::ObjectData>& vec_res);
+    bool Detect(const ts::TSImgData& image, std::vector<ts::ObjectData>& results);
 
     /**
      * @brief: Check object detection instance initialization state.
