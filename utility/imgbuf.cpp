@@ -5,7 +5,6 @@
 
 #include <opencv2/opencv.hpp>
 #include "imgbuf.hpp"
-#include "TSLog.h"
 
 int cvtTypeImgData2Buf(int format) {
     if (TYPE_BGR_F32 == format || TYPE_RGB_F32 == format) {
@@ -72,7 +71,7 @@ int cvt_cvtype2rdc(int type) {
 
 void cvt_Mat2ImgBuf(const cv::Mat& src, ImgBuf& dst, bool deep_cp = false) {
     if (NULL == src.data || src.empty()) {
-        TSLOGE("ERROR: Failed in rdc::cvt_Mat2ImgBuf cased by empty source.\n");
+        TS_ERROR_LOG("ERROR: Failed in rdc::cvt_Mat2ImgBuf cased by empty source.");
         return;
     }
     if (true == deep_cp) {
@@ -94,7 +93,7 @@ void cvt_Mat2ImgBuf(const cv::Mat& src, ImgBuf& dst, bool deep_cp = false) {
 
 void cvt_ImgBuf2Mat(const ImgBuf& src, cv::Mat& dst, bool deep_cp = false) {
     if (NULL == src.data() || src.empty()) {
-        TSLOGE("ERROR: Failed in rdc::cvt_ImgBuf2Mat cased by empty source.\n");
+        TS_ERROR_LOG("ERROR: Failed in rdc::cvt_ImgBuf2Mat cased by empty source.");
         return;
     }
     if (true == deep_cp) {
@@ -162,7 +161,7 @@ void ImgBuf::operator= (const ImgBuf &t) {
 ImgBuf ImgBuf::row(int j) const {
     ImgBuf dst;
     if (j >= this->height_) {
-        TSLOGE("ERROR: In rdc::ImgBuf::row, the row number must be lower than image height!\n");
+        TS_ERROR_LOG("ERROR: In rdc::ImgBuf::row, the row number must be lower than image height!");
         return dst;
     }
     switch (pixel_len_) {
@@ -191,7 +190,7 @@ void ImgBuf::create(int width, int height, int format, void *data, int stride) {
 
 void ImgBuf::copyTo(ImgBuf &dst) const {
     if (this->empty()) {
-        TSLOGE("ERROR: The source ImgBuf is empty, and it cannot be copied!/n");
+        TS_ERROR_LOG("ERROR: The source ImgBuf is empty, and it cannot be copied!");
         return;
     }
 #if 1
@@ -228,7 +227,7 @@ void ImgBuf::push_back(const ImgBuf& t) {
         this->type_ != t.type_           ||
         this->pixel_len_ != t.pixel_len_ ||
         RDC_UNKNOWN == this->type_) {
-        TSLOGE("ERROR: Func \"ImgBuf::push_back\" same types required: (width == t.width && type == t.type && etc.)");
+        TS_ERROR_LOG("ERROR: Func \"ImgBuf::push_back\" same types required: (width == t.width && type == t.type && etc.)");
         return;
     }
     cv::Size target_size(this->width_, this->height_ + t.height_);

@@ -4,7 +4,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-18 16:51:10
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 17:19:07
+ * @LastEditTime: 2022-05-18 10:10:25
  */
 
 /*
@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 #include <sys/stat.h>
+#include <iostream>
+#include <fstream>
 
 #include <opencv2/opencv.hpp>
 #include <gflags/gflags.h>
@@ -82,13 +84,13 @@ static bool validateModelPath(const char* name, const std::string& value)
 }
 
 DEFINE_string(model_path, "./yolov5s.dlc", "DLC file path.");
-DEFINE_validator(model_path, &validateModel);
+DEFINE_validator(model_path, &validateModelPath);
 
 int main(int argc, char* argv[])
 {
     google::ParseCommandLineFlags (&argc, &argv, true);
 
-    std::vector<std::string> labels =  new std::string[1000];
+    std::vector<std::string> labels;
     std::ifstream in(FLAGS_labels);
     std::string line;
     while (getline(in,line)){
@@ -117,7 +119,7 @@ int main(int argc, char* argv[])
 
         for (size_t i = 0; i < vec_res.size(); i++) {
             ts::ObjectData rect = vec_res[i];
-            TS_INFO_LOG("[%d, %d, %d, %d, %s, %d]", rect.x, rect.y, rect.width, rect.height, rect.confidence, rect.label);
+            TS_INFO_LOG("[%d, %d, %d, %d, %f, %d]", rect.x, rect.y, rect.width, rect.height, rect.confidence, rect.label);
             cv::rectangle(img, cv::Rect(rect.x, rect.y, rect.width, rect.height), cv::Scalar(0, 255, 0), 3);
             cv::Point position = cv::Point(rect.x, rect.y - 10);
             cv::putText(img, labels[rect.label], position, cv::FONT_HERSHEY_COMPLEX, 0.8, cv::Scalar(0, 255, 0), 2, 0.3);

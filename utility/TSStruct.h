@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:32:59
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 12:08:46
+ * @LastEditTime: 2022-05-18 10:07:01
  */
 
 #pragma once
@@ -36,6 +36,14 @@
     printf("** WARN:  <%s:%s:%d>: " msg "\n", \
         __FILE__, __func__, __LINE__, ##__VA_ARGS__)
 
+
+constexpr int TYPE_BGR_U8                     = 0x00;
+constexpr int TYPE_RGB_U8                     = 0x01;
+constexpr int TYPE_BGR_F32                    = 0x02;
+constexpr int TYPE_RGB_F32                    = 0x03;
+constexpr int TYPE_C1_U8                      = 0x04;
+constexpr int TYPE_C1_F32                     = 0x05;
+constexpr int TYPE_UNKNOWN                    = 0x06;
 
 // Inference hardware runtime.
 typedef enum runtime {

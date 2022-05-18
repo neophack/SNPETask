@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-18 09:48:36
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 17:17:48
+ * @LastEditTime: 2022-05-18 10:05:12
  */
 
 
@@ -19,21 +19,22 @@ namespace snpetask{
 
 static size_t calcSizeFromDims(const zdl::DlSystem::Dimension* dims, size_t rank, size_t elementSize)
 {
-   if (rank == 0) return 0;
-   size_t size = elementSize;
-   while (rank--) {
-      (*dims == 0) ? size *= resizable_dim : size *= *dims;
-      dims++;
-   }
-   return size;
+    if (rank == 0) return 0;
+    size_t size = elementSize;
+    while (rank--) {
+        size *= *dims;
+        dims++;
+    }
+    return size;
 }
 
 
 static void createUserBuffer(zdl::DlSystem::UserBufferMap& userBufferMap,
-                      std::unordered_map<std::string, std::vector<uint8_t>>& applicationBuffers,
+                      std::unordered_map<std::string, float*>& applicationBuffers,
                       std::vector<std::unique_ptr<zdl::DlSystem::IUserBuffer>>& snpeUserBackedBuffers,
                       const zdl::DlSystem::TensorShape& bufferShape,
-                      const char* name)
+                      const char* name,
+                      float* buffer)
 {
     // Calculate the stride based on buffer strides, assuming tightly packed.
     // Note: Strides = Number of bytes to advance to the next element in each dimension.
@@ -47,15 +48,16 @@ static void createUserBuffer(zdl::DlSystem::UserBufferMap& userBufferMap,
         stride *= bufferShape[i];
         strides[i-1] = stride;
     }
-    const size_t bufferElementSize = (*bufferAttributesOpt)->getElementSize();
+    const size_t bufferElementSize = sizeof(float);
     size_t bufSize = calcSizeFromDims(bufferShape.getDimensions(), bufferShape.rank(), bufferElementSize);
+    buffer = new float[bufSize];
     // set the buffer encoding type
     zdl::DlSystem::UserBufferEncodingFloat userBufferEncodingFloat;
     // create user-backed storage to load input data onto it
-    applicationBuffers.emplace(name, std::vector<uint8_t>(bufSize));
+    applicationBuffers.emplace(name, buffer);
     // create SNPE user buffer from the user-backed buffer
     zdl::DlSystem::IUserBufferFactory& ubFactory = zdl::SNPE::SNPEFactory::getUserBufferFactory();
-    snpeUserBackedBuffers.push_back(ubFactory.createUserBuffer(applicationBuffers.at(name).data(),
+    snpeUserBackedBuffers.push_back(ubFactory.createUserBuffer(applicationBuffers.at(name),
                                                                 bufSize,
                                                                 strides,
                                                                 &userBufferEncodingFloat));
@@ -101,8 +103,8 @@ bool SNPETask::init(const std::string& model_path, const runtime_t runtime)
     }
 
     if (!zdl::SNPE::SNPEFactory::isRuntimeAvailable(m_runtime)) {
-        std::cerr << "Selected runtime not present. Falling back to CPU." << std::endl;
-        runtime = zdl::DlSystem::Runtime_t::CPU;
+        TS_ERROR_LOG("Selected runtime not present. Falling back to CPU.");
+        m_runtime = zdl::DlSystem::Runtime_t::CPU;
     }
 
     zdl::DlSystem::PerformanceProfile_t profile = zdl::DlSystem::PerformanceProfile_t::BURST;
@@ -118,8 +120,9 @@ bool SNPETask::init(const std::string& model_path, const runtime_t runtime)
     const auto& inputNamesOpt = m_snpe->getInputTensorNames();
     if (!inputNamesOpt) throw std::runtime_error("Error obtaining input tensor names");
     const zdl::DlSystem::StringList& inputNames = *inputNamesOpt;
-    assert(inputNames.size() > 0);
-
+    m_inputTensorSize = inputNames.size();
+    m_inputBuffers = (float **)malloc(m_inputTensorSize * sizeof(float*));
+    int i = 0;
     // create SNPE user buffers for each application storage buffer
     for (const char* name : inputNames) {
         // get attributes of buffer by name
@@ -130,17 +133,18 @@ bool SNPETask::init(const std::string& model_path, const runtime_t runtime)
         }
 
         const zdl::DlSystem::TensorShape bufferShape = (*bufferAttributesOpt)->getDims();
-        m_inputShape = bufferShape;
+        m_outputShapes.emplace(name, bufferShape);
 
-        createUserBuffer(m_inputUserBufferMap, m_inputTensors, m_inputUserBuffers, bufferShape, name);
+        createUserBuffer(m_inputUserBufferMap, m_inputTensors, m_inputUserBuffers, bufferShape, name, m_inputBuffers[i++]);
     }
 
     // get output tensor names of the network that need to be populated
     const auto& outputNamesOpt = m_snpe->getOutputTensorNames();
     if (!outputNamesOpt) throw std::runtime_error("Error obtaining output tensor names");
     const zdl::DlSystem::StringList& outputNames = *outputNamesOpt;
-    assert(outputNames.size() > 0);
-
+    m_outputTensorSize = outputNames.size();
+    m_outputBuffers = (float **)malloc(m_outputTensorSize * sizeof(float*));
+    i = 0;
     // create SNPE user buffers for each application storage buffer
     for (const char* name : outputNames) {
         // get attributes of buffer by name
@@ -153,7 +157,7 @@ bool SNPETask::init(const std::string& model_path, const runtime_t runtime)
         const zdl::DlSystem::TensorShape bufferShape = (*bufferAttributesOpt)->getDims();
         m_outputShapes.emplace(name, bufferShape);
 
-        createUserBuffer(m_outputUserBufferMap, m_outputTensors, m_outputUserBuffers, bufferShape, name);
+        createUserBuffer(m_outputUserBufferMap, m_outputTensors, m_outputUserBuffers, bufferShape, name, m_outputBuffers[i++]);
     }
 
     m_isInit = true;
@@ -163,38 +167,56 @@ bool SNPETask::init(const std::string& model_path, const runtime_t runtime)
 
 bool SNPETask::deInit()
 {
+    if (nullptr != m_snpe) {
+        m_snpe.reset(nullptr);
+    }
+
+    for (int i = 1; i < m_inputTensorSize; i++) {
+        free(m_inputBuffers[i]);
+    }
+	free(m_inputBuffers);
+
+    for (int i = 1; i < m_outputTensorSize; i++) {
+        free(m_outputBuffers[i]);
+    }
+	free(m_outputBuffers);
 
 }
 
-bool SNPETask::setOutputLayers(const std::vector<std::string>& outputLayers)
+bool SNPETask::setOutputLayers(std::vector<std::string>& outputLayers)
 {
     for (size_t i = 0; i < outputLayers.size(); i ++) {
-        m_outputLayers.append(outputLayers[i]);
+        m_outputLayers.append(outputLayers[i].c_str());
     }
 
     return true;
 }
 
-zdl::DlSystem::TensorShape SNPETask::getInputShape()
+const zdl::DlSystem::TensorShape SNPETask::getInputShape(const std::string name)
 {
     if (isInit()) {
-        return m_inputShape;
+        if (m_inputShapes.find(name) != m_inputShapes.end()) {
+            return m_inputShapes.at(name);
+        }
+        TS_ERROR_LOG("Can't find any ouput layer named %s", name.c_str());
+        return {};
     } else {
-        TS_ERROR_LOG("The getInputShape() needs to be called after AICProgram initialized!");
+        TS_ERROR_LOG("The getInputShape() needs to be called after AICContext is initialized!");
+        return {};
     }
 }
 
-zdl::DlSystem::TensorShape SNPETask::getOutputShape(const std::string name)
+const zdl::DlSystem::TensorShape SNPETask::getOutputShape(const std::string name)
 {
     if (isInit()) {
         if (m_outputShapes.find(name) != m_outputShapes.end()) {
             return m_outputShapes.at(name);
         }
-        TS_ERROR_LOG("Can't find any ouput layer named %d", name);
-        return nullptr;
+        TS_ERROR_LOG("Can't find any ouput layer named %s", name.c_str());
+        return {};
     } else {
         TS_ERROR_LOG("The getOutputShape() needs to be called after AICContext is initialized!");
-        return nullptr;
+        return {};
     }
 }
 
@@ -202,9 +224,9 @@ float* SNPETask::getInputTensor(const std::string& name)
 {
     if (isInit()) {
         if (m_inputTensors.find(name) != m_inputTensors.end()) {
-            return static_cast<float*>(m_inputTensors.at(name).data());
+            return m_inputTensors.at(name);
         }
-        TS_ERROR_LOG("Can't find any input tensor named %d", name);
+        TS_ERROR_LOG("Can't find any input tensor named %s", name.c_str());
         return nullptr;
     } else {
         TS_ERROR_LOG("The getInputTensor() needs to be called after AICContext is initialized!");
@@ -216,9 +238,9 @@ float* SNPETask::getOutputTensor(const std::string& name)
 {
     if (isInit()) {
         if (m_outputTensors.find(name) != m_outputTensors.end()) {
-            return static_cast<float*>(m_outputTensors.at(name).data());
+            return m_outputTensors.at(name);
         }
-        TS_ERROR_LOG("Can't find any output tensor named %d", name);
+        TS_ERROR_LOG("Can't find any output tensor named %s", name.c_str());
         return nullptr;
     } else {
         TS_ERROR_LOG("The getOutputTensor() needs to be called after AICContext is initialized!");

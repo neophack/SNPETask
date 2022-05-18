@@ -9,15 +9,24 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:28:01
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 13:00:55
+ * @LastEditTime: 2022-05-18 10:06:25
  */
 
 #include <memory>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <string>
 
-#include <SNPE/SNPE.h>
+#include "SNPE/SNPE.hpp"
+#include "SNPE/SNPEFactory.hpp"
+#include "SNPE/SNPEBuilder.hpp"
+#include "DlSystem/DlEnums.hpp"
+#include "DlSystem/DlError.hpp"
+#include "DlSystem/ITensorFactory.hpp"
+#include "DlSystem/IUserBufferFactory.hpp"
+#include "DlSystem/TensorShape.hpp"
+#include "DlContainer/IDlContainer.hpp"
 
 #include "TSStruct.h"
 
@@ -30,12 +39,13 @@ public:
 
     bool init(const std::string& model_path, const runtime_t runtime);
     bool deInit();
-    bool setOutputLayers(const std::vector<std::string>& outputLayers);
+    bool setOutputLayers(std::vector<std::string>& outputLayers);
 
-    zdl::DlSystem::TensorShape getInputShape(const std::string name);
-    zdl::DlSystem::TensorShape getOutputShape(const std::string name);
+    const zdl::DlSystem::TensorShape getInputShape(const std::string name);
+    const zdl::DlSystem::TensorShape getOutputShape(const std::string name);
 
-    float* getTensor(const std::string& name);
+    float* getInputTensor(const std::string& name);
+    float* getOutputTensor(const std::string& name);
 
     bool isInit() {
         return m_isInit;
@@ -51,15 +61,18 @@ private:
     zdl::DlSystem::Runtime_t m_runtime;
     zdl::DlSystem::StringList m_outputLayers;
 
-    const zdl::DlSystem::TensorShape m_inputShape;
+    std::map<std::string, const zdl::DlSystem::TensorShape> m_inputShapes;
     std::map<std::string, const zdl::DlSystem::TensorShape> m_outputShapes;
 
     std::vector<std::unique_ptr<zdl::DlSystem::IUserBuffer> > m_inputUserBuffers;
     std::vector<std::unique_ptr<zdl::DlSystem::IUserBuffer> > m_outputUserBuffers;
     zdl::DlSystem::UserBufferMap m_inputUserBufferMap;
     zdl::DlSystem::UserBufferMap m_outputUserBufferMap;
-    std::unordered_map<std::string, std::vector<uint8_t> > m_inputTensors;
-    std::unordered_map<std::string, std::vector<uint8_t> > m_outputTensors;
+    int m_inputTensorSize, m_outputTensorSize;
+    float** m_inputBuffers;
+    float** m_outputBuffers;
+    std::unordered_map<std::string, float*> m_inputTensors;
+    std::unordered_map<std::string, float*> m_outputTensors;
 };
 
 

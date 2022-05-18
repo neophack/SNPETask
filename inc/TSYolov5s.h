@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:26:39
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 14:37:41
+ * @LastEditTime: 2022-05-18 09:31:30
  */
 
 #ifndef __TS_YOLOV5S_H__
@@ -27,7 +27,7 @@ namespace ts
  * @brief: Object detection result structure.
  * 
  */
-class ObjectData {
+class ObjectData : public TSRect_T<int> {
 public:
     // Bounding box information: top-left coordinate and width, height
     using TSRect_T<int>::TSRect_T;

@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:27:51
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 16:44:06
+ * @LastEditTime: 2022-05-18 09:35:40
  */
 
 #ifndef __TS_FACE_DETECTION_IMPL_H__
@@ -106,7 +106,7 @@ private:
     float m_confThresh = 0.5f;
     float m_scaleWidth;
     float m_scaleHeight;
-    float m_sclae;
+    float m_scale;
     int m_xOffset, m_yOffset;
 };
 

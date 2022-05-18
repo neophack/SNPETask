@@ -14,6 +14,7 @@ include(FindPkgConfig)
 pkg_check_modules(GFLAGS REQUIRED gflags)
 
 include_directories(
+    /usr/include/zdl
     ${PROJECT_SOURCE_DIR}/inc
     ${PROJECT_SOURCE_DIR}/snpetask
     ${PROJECT_SOURCE_DIR}/utility
@@ -34,8 +35,8 @@ add_library(TSYolov5s
     ${PROJECT_SOURCE_DIR}/utility/imgbuf.cpp
 )
 
-target_link_libraries(${PROJECT_NAME}
-    SMPE
+target_link_libraries(TSYolov5s
+    SNPE
     pthread
     dl
     ${OpenCV_LIBS}
@@ -51,4 +52,5 @@ target_link_libraries(test-yolov5s
     dl
     ${OpenCV_LIBS}
     ${GFLAGS_LIBRARIES}
+    TSYolov5s
 )

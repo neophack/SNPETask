@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:28:01
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 17:16:53
+ * @LastEditTime: 2022-05-18 09:37:02
  */
 
 #include <math.h>
@@ -29,7 +29,7 @@ TSObjectDetectionImpl::~TSObjectDetectionImpl() {
 
 bool TSObjectDetectionImpl::Initialize(const std::string& model_path, const runtime_t runtime)
 {
-    m_task = std::move(std::unique_ptr<snpetask::SNPETask()>(new snpetask::SNPETask()));
+    m_task = std::move(std::unique_ptr<snpetask::SNPETask>(new snpetask::SNPETask()));
 
     m_outputLayers.push_back(OUTPUT_NODE0);        // stride: 8
     m_outputLayers.push_back(OUTPUT_NODE1);        // stride: 16  
@@ -51,7 +51,7 @@ bool TSObjectDetectionImpl::Initialize(const std::string& model_path, const runt
 bool TSObjectDetectionImpl::DeInitialize()
 {
     if (m_task) {
-        m_task->deinitialize();
+        m_task->deInit();
         m_task = nullptr;
     }
 
@@ -66,14 +66,14 @@ bool TSObjectDetectionImpl::DeInitialize()
 
 bool TSObjectDetectionImpl::PreProcess(const ts::TSImgData& image)
 {
-    auto inputShape = m_task->getInputShape();
+    auto inputShape = m_task->getInputShape(INPUT_TENSOR);
 
     size_t batch = inputShape[0];
     size_t inputHeight = inputShape[1];
     size_t inputWidth = inputShape[2];
     size_t channel = inputShape[3];
 
-    if (m_task->getInputTensor() == nullptr) {
+    if (m_task->getInputTensor(INPUT_TENSOR) == nullptr) {
         TS_ERROR_LOG("Empty input tensor");
         return false;
     }
@@ -95,8 +95,8 @@ bool TSObjectDetectionImpl::PreProcess(const ts::TSImgData& image)
     int imgHeight = image.height();
     
     m_scale = std::min(inputHeight /(float)imgWidth, inputWidth / (float)imgHeight);
-    int scaledWidth = imgWidth * scale;
-    int scaledHeight = imgHeight * scale;
+    int scaledWidth = imgWidth * m_scale;
+    int scaledHeight = imgHeight * m_scale;
     m_xOffset = (inputWidth - scaledWidth) / 2;
     m_yOffset = (inputHeight - scaledHeight) / 2;
 
@@ -120,7 +120,7 @@ bool TSObjectDetectionImpl::Detect(const ts::TSImgData& image,
 
     PreProcess(image);
 
-    if (m_task->asyncExec()) {
+    if (m_task->execute()) {
         TS_ERROR_LOG("AICTask asyncExec failed.");
         return false;
     }
@@ -138,8 +138,6 @@ bool TSObjectDetectionImpl::PostProcess(std::vector<ts::ObjectData> &results)
         {30, 61, 62, 45, 59, 119},      // 16*16
         {116, 90, 156, 198, 373, 326},  // 32*32
     };
-
-    std::vector<ts::ObjectData> winList;
 
     // copy all outputs to one array.
     // [80 * 80 * 3 * 85]----\
@@ -162,11 +160,11 @@ bool TSObjectDetectionImpl::PostProcess(std::vector<ts::ObjectData> &results)
                     for (int m = 0; m < channel / 3; m++) {     // 85
                         if (m < 2) {
                             float value = *predOutput;
-                            float grid_value = m == 0 ? k : j;
-                            *tmpOutput = (value * 2 - 0.5 + grid_value) * stride[i];
+                            float gridValue = m == 0 ? k : j;
+                            *tmpOutput = (value * 2 - 0.5 + gridValue) * strides[i];
                         } else if (m < 4) {
                             float value = *predOutput;
-                            *tmpOutput = value * value * 4 * anchor_grid[i][anchor_index++];
+                            *tmpOutput = value * value * 4 * anchorGrid[i][anchorIdx++];
                         } else {
                             *tmpOutput = *predOutput;
                         }
@@ -203,8 +201,8 @@ bool TSObjectDetectionImpl::PostProcess(std::vector<ts::ObjectData> &results)
                 ts::ObjectData rect;
                 rect.width = m_output[curIdx * MODEL_OUTPUT_CHANNEL + 2];
                 rect.height = m_output[curIdx * MODEL_OUTPUT_CHANNEL + 3];
-                rect.x = std::min(0, static_cast<int>(m_output[curIdx * MODEL_OUTPUT_CHANNEL] - w / 2));
-                rect.y = std::min(0, static_cast<int>(m_output[curIdx * MODEL_OUTPUT_CHANNEL + 1] - h / 2));
+                rect.x = std::min(0, static_cast<int>(m_output[curIdx * MODEL_OUTPUT_CHANNEL] - rect.width / 2));
+                rect.y = std::min(0, static_cast<int>(m_output[curIdx * MODEL_OUTPUT_CHANNEL + 1] - rect.height / 2));
                 rect.confidence = score;
                 rect.label = j - 5;
 
