@@ -1,0 +1,17 @@
+{
+    "name":"yolov5s",
+    "lib":"/opt/thundersoft/algs/lib/libAlgFaceDetector.so",
+    "config":{
+      "model-path":"/opt/thundersoft/algs/model/yolov5s.dlc",
+      "label-path":"/opt/thundersoft/configs/yolov5s.txt",
+      "nms-thresh":0.5,
+      "conf-thresh":0.5,
+      "runtime":"DSP",
+      "roi":{
+        "x":100,
+        "y":100,
+        "w":1720,
+        "h":880
+      }
+    }
+  }

@@ -4,7 +4,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-18 16:51:10
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-19 02:32:47
+ * @LastEditTime: 2022-05-19 11:51:00
  */
 
 /*
@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> labels;
     std::ifstream in(FLAGS_labels);
     std::string line;
-    while (getline(in,line)){
+    while (getline(in, line)){
         labels.push_back(line);
     }
 

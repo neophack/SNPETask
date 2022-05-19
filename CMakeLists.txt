@@ -54,3 +54,6 @@ target_link_libraries(test-yolov5s
     ${GFLAGS_LIBRARIES}
     TSYolov5s
 )
+
+#----------------------------------------------
+add_subdirectory(alg)
