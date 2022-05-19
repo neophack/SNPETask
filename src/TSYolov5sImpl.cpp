@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:28:01
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 09:37:02
+ * @LastEditTime: 2022-05-19 02:47:09
  */
 
 #include <math.h>
@@ -32,7 +32,7 @@ bool TSObjectDetectionImpl::Initialize(const std::string& model_path, const runt
     m_task = std::move(std::unique_ptr<snpetask::SNPETask>(new snpetask::SNPETask()));
 
     m_outputLayers.push_back(OUTPUT_NODE0);        // stride: 8
-    m_outputLayers.push_back(OUTPUT_NODE1);        // stride: 16  
+    m_outputLayers.push_back(OUTPUT_NODE1);        // stride: 16
     m_outputLayers.push_back(OUTPUT_NODE2);        // stride: 32
     m_outputTensors.push_back(OUTPUT_TENSOR0);     // 1*80*80*3*85
     m_outputTensors.push_back(OUTPUT_TENSOR1);     // 1*40*40*3*85
@@ -52,7 +52,7 @@ bool TSObjectDetectionImpl::DeInitialize()
 {
     if (m_task) {
         m_task->deInit();
-        m_task = nullptr;
+        m_task.reset(nullptr);
     }
 
     if (m_output) {
@@ -120,8 +120,8 @@ bool TSObjectDetectionImpl::Detect(const ts::TSImgData& image,
 
     PreProcess(image);
 
-    if (m_task->execute()) {
-        TS_ERROR_LOG("AICTask asyncExec failed.");
+    if (!m_task->execute()) {
+        TS_ERROR_LOG("SNPETask execute failed.");
         return false;
     }
 

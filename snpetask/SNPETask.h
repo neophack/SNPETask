@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:28:01
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 10:06:25
+ * @LastEditTime: 2022-05-19 02:50:21
  */
 
 #include <memory>
@@ -41,8 +41,8 @@ public:
     bool deInit();
     bool setOutputLayers(std::vector<std::string>& outputLayers);
 
-    const zdl::DlSystem::TensorShape getInputShape(const std::string name);
-    const zdl::DlSystem::TensorShape getOutputShape(const std::string name);
+    std::vector<size_t> getInputShape(const std::string& name);
+    std::vector<size_t> getOutputShape(const std::string& name);
 
     float* getInputTensor(const std::string& name);
     float* getOutputTensor(const std::string& name);
@@ -61,8 +61,8 @@ private:
     zdl::DlSystem::Runtime_t m_runtime;
     zdl::DlSystem::StringList m_outputLayers;
 
-    std::map<std::string, const zdl::DlSystem::TensorShape> m_inputShapes;
-    std::map<std::string, const zdl::DlSystem::TensorShape> m_outputShapes;
+    std::map<std::string, std::vector<size_t> > m_inputShapes;
+    std::map<std::string, std::vector<size_t> > m_outputShapes;
 
     std::vector<std::unique_ptr<zdl::DlSystem::IUserBuffer> > m_inputUserBuffers;
     std::vector<std::unique_ptr<zdl::DlSystem::IUserBuffer> > m_outputUserBuffers;

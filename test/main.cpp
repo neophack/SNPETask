@@ -4,7 +4,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-18 16:51:10
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 10:10:25
+ * @LastEditTime: 2022-05-19 02:32:47
  */
 
 /*
@@ -98,13 +98,13 @@ int main(int argc, char* argv[])
     }
 
     std::vector<std::shared_ptr<ts::TSObjectDetection> > vec_alg;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 1; i++) {
         std::shared_ptr<ts::TSObjectDetection> alg = std::shared_ptr<ts::TSObjectDetection>(new ts::TSObjectDetection());
         alg->Init(FLAGS_model_path, DSP);
         vec_alg.push_back(alg);
     }
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 1; i++) {
         cv::Mat img = cv::imread(FLAGS_input);
         cv::Mat rgb_img;
 
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 
         TS_INFO_LOG("result size: %ld", vec_res.size());
 
-        for (size_t i = 0; i < vec_res.size(); i++) {
+        for (size_t j = 0; j < vec_res.size(); j++) {
             ts::ObjectData rect = vec_res[i];
             TS_INFO_LOG("[%d, %d, %d, %d, %f, %d]", rect.x, rect.y, rect.width, rect.height, rect.confidence, rect.label);
             cv::rectangle(img, cv::Rect(rect.x, rect.y, rect.width, rect.height), cv::Scalar(0, 255, 0), 3);

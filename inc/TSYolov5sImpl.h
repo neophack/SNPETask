@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:27:51
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 09:35:40
+ * @LastEditTime: 2022-05-19 01:47:19
  */
 
 #ifndef __TS_FACE_DETECTION_IMPL_H__
@@ -26,7 +26,7 @@
 #define MODEL_OUTPUT_CHANNEL    85
 #define MODEL_OUTPUT_GRIDS      25200    // (80 * 80 + 40 * 40 + 20 * 20) * 3
 
-#define INPUT_TENSOR            "image"
+#define INPUT_TENSOR            "images"
 #define OUTPUT_NODE0            "Sigmoid_199"
 #define OUTPUT_NODE1            "Sigmoid_201"
 #define OUTPUT_NODE2            "Sigmoid_203"
