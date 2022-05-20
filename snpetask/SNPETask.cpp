@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-18 09:48:36
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-19 02:54:38
+ * @LastEditTime: 2022-05-20 17:13:35
  */
 
 
@@ -48,8 +48,8 @@ static void createUserBuffer(zdl::DlSystem::UserBufferMap& userBufferMap,
         stride *= bufferShape[i];
         strides[i-1] = stride;
     }
-    const size_t bufferElementSize = sizeof(float);
-    size_t bufSize = calcSizeFromDims(bufferShape.getDimensions(), bufferShape.rank(), bufferElementSize);
+    // const size_t bufferElementSize = sizeof(float);
+    size_t bufSize = calcSizeFromDims(bufferShape.getDimensions(), bufferShape.rank(), 1);
     buffer = new float[bufSize];
 
     // set the buffer encoding type
