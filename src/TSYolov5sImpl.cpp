@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:28:01
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-19 02:47:09
+ * @LastEditTime: 2022-05-20 17:12:16
  */
 
 #include <math.h>
@@ -94,7 +94,7 @@ bool TSObjectDetectionImpl::PreProcess(const ts::TSImgData& image)
     int imgWidth = image.width();
     int imgHeight = image.height();
     
-    m_scale = std::min(inputHeight /(float)imgWidth, inputWidth / (float)imgHeight);
+    m_scale = std::min(inputHeight /(float)imgHeight, inputWidth / (float)imgWidth);
     int scaledWidth = imgWidth * m_scale;
     int scaledHeight = imgHeight * m_scale;
     m_xOffset = (inputWidth - scaledWidth) / 2;
@@ -143,10 +143,10 @@ bool TSObjectDetectionImpl::PostProcess(std::vector<ts::ObjectData> &results)
     // [80 * 80 * 3 * 85]----\
     // [40 * 40 * 3 * 85]--------> [25200 * 85]
     // [20 * 20 * 3 * 85]----/
+    float* tmpOutput = m_output;
     for (size_t i = 0; i < 3; i++) {
         auto outputShape = m_task->getOutputShape(m_outputTensors[i]);
         const float *predOutput = m_task->getOutputTensor(m_outputTensors[i]);
-        float* tmpOutput = m_output;
 
         int batch = outputShape[0];
         int height = outputShape[1];
@@ -201,8 +201,13 @@ bool TSObjectDetectionImpl::PostProcess(std::vector<ts::ObjectData> &results)
                 ts::ObjectData rect;
                 rect.width = m_output[curIdx * MODEL_OUTPUT_CHANNEL + 2];
                 rect.height = m_output[curIdx * MODEL_OUTPUT_CHANNEL + 3];
-                rect.x = std::min(0, static_cast<int>(m_output[curIdx * MODEL_OUTPUT_CHANNEL] - rect.width / 2));
-                rect.y = std::min(0, static_cast<int>(m_output[curIdx * MODEL_OUTPUT_CHANNEL + 1] - rect.height / 2));
+                rect.x = std::max(0, static_cast<int>(m_output[curIdx * MODEL_OUTPUT_CHANNEL] - rect.width / 2)) - m_xOffset;
+                rect.y = std::max(0, static_cast<int>(m_output[curIdx * MODEL_OUTPUT_CHANNEL + 1] - rect.height / 2)) - m_yOffset;
+
+                rect.width /= m_scale;
+                rect.height /= m_scale;
+                rect.x /= m_scale;
+                rect.y /= m_scale;
                 rect.confidence = score;
                 rect.label = j - 5;
 
