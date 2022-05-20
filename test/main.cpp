@@ -4,16 +4,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-18 16:51:10
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-20 17:11:57
- */
-
-/*
- * @Description: Test porgram of TSYolov5s.
- * @version: 1.0
- * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
- * @Date: 2022-03-27 15:26:46
- * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-12 10:50:13
+ * @LastEditTime: 2022-05-20 10:16:46
  */
 
 #include <string>
@@ -88,7 +79,7 @@ DEFINE_validator(model_path, &validateModelPath);
 
 int main(int argc, char* argv[])
 {
-    google::ParseCommandLineFlags (&argc, &argv, true);
+    google::ParseCommandLineFlags(&argc, &argv, true);
 
     std::vector<std::string> labels;
     std::ifstream in(FLAGS_labels);
@@ -129,6 +120,6 @@ int main(int argc, char* argv[])
 
         cv::imwrite(output_path, img);
     }
-    google::ShutDownCommandLineFlags ();
+    google::ShutDownCommandLineFlags();
     return 0;
 }
