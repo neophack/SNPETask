@@ -24,7 +24,10 @@ include_directories(
 link_directories(
     ${OpenCV_LIBRARY_DIRS}
     ${GFLAGS_LIBRARY_DIRS}
+    ${PROJECT_SOURCE_DIR}/lib
 )
+
+set(LIBRARY_OUTPUT_PATH  ${CMAKE_SOURCE_DIR}/lib)
 
 add_library(TSYolov5s
     SHARED
