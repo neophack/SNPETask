@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-19 11:08:17
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-19 11:50:21
+ * @LastEditTime: 2022-05-20 09:20:16
  */
 
 //
@@ -109,7 +109,7 @@ static bool parse_args (AlgConfig& config, const std::string& data)
                 std::string r ((const char*)json_object_get_string_member (
                     object, "label-path"));
                 TS_INFO_MSG_V ("\tlabel-path:%s", r.c_str());
-                config.runtime = r;                
+                config.runtime = string2runtime(r);                
             }
 
             if (json_object_has_member (object, "nms-thresh")) {
@@ -192,7 +192,7 @@ static JsonObject* results_to_json_object (const std::vector<ts::ObjectData>& re
         json_object_set_string_member (jobject, "confidence", 
             std::to_string(results[i].confidence).c_str());
         json_object_set_string_member (jobject, "label", 
-            a->labels_[results[i].label]);
+            a->labels_[results[i].label].c_str());
         json_object_set_string_member (jobject, "x", 
             std::to_string(results[i].x).c_str());
         json_object_set_string_member (jobject, "y", 
@@ -346,42 +346,42 @@ std::shared_ptr<std::vector<std::shared_ptr<TsJsonObject>>> algProc2 (void* alg,
         return nullptr;
     }
 
-    for (size_t i = 0; i < datas->size(); i++) {
-        GstSample* sample = (*datas)[i]->GetSample();
+    // for (size_t i = 0; i < datas->size(); i++) {
+    //     GstSample* sample = (*datas)[i]->GetSample();
 
-        gint width, height, type = TYPE_RGB_U8;
-        GstCaps* caps = gst_sample_get_caps (sample);
-        GstStructure* structure = gst_caps_get_structure (caps, 0);
-        gst_structure_get_int (structure, "width", &width);
-        gst_structure_get_int (structure, "height", &height);
-        std::string format ((char*)gst_structure_get_string (
-            structure, "format"));
-        if (0 != format.compare("RGB")) {
-            TS_ERR_MSG_V ("Invalid format(%s!=RGB)", format.c_str());
-            gst_sample_unref(sample);
-            return NULL;
-        }
+    //     gint width, height, type = TYPE_RGB_U8;
+    //     GstCaps* caps = gst_sample_get_caps (sample);
+    //     GstStructure* structure = gst_caps_get_structure (caps, 0);
+    //     gst_structure_get_int (structure, "width", &width);
+    //     gst_structure_get_int (structure, "height", &height);
+    //     std::string format ((char*)gst_structure_get_string (
+    //         structure, "format"));
+    //     if (0 != format.compare("RGB")) {
+    //         TS_ERR_MSG_V ("Invalid format(%s!=RGB)", format.c_str());
+    //         gst_sample_unref(sample);
+    //         return NULL;
+    //     }
 
-        GstMapInfo map;
-        GstBuffer* buf = gst_sample_get_buffer (sample);
-        gst_buffer_map (buf, &map, GST_MAP_READ);
-        ts::TSImgData image(width, height, TYPE_RGB_U8, map.data);
-        std::vector<ts::TSImgData> images = {image};
-        gst_buffer_unmap (buf, &map);
+    //     GstMapInfo map;
+    //     GstBuffer* buf = gst_sample_get_buffer (sample);
+    //     gst_buffer_map (buf, &map, GST_MAP_READ);
+    //     ts::TSImgData image(width, height, TYPE_RGB_U8, map.data);
+    //     std::vector<ts::TSImgData> images = {image};
+    //     gst_buffer_unmap (buf, &map);
 
-        std::vector<ts::ObjectData> results;
-        if (!a->alg_->Detect(images, results)) {
-            TS_WARN_MSG_V ("Failed to detect person in the image"); 
-            return NULL;
-        }
+    //     std::vector<ts::ObjectData> results;
+    //     if (!a->alg_->Detect(images, results)) {
+    //         TS_WARN_MSG_V ("Failed to detect person in the image"); 
+    //         return NULL;
+    //     }
 
-        std::shared_ptr<TsJsonObject> jo = std::make_shared<
-            TsJsonObject>(results_to_json_object(results, a));
-        results_to_osd_object(results, jo->GetOsdObject (), a->cfg_.roi.x,
-            a->cfg_.roi.y, a->cfg_.roi.width, a->cfg_.roi.height);
+    //     std::shared_ptr<TsJsonObject> jo = std::make_shared<
+    //         TsJsonObject>(results_to_json_object(results, a));
+    //     results_to_osd_object(results, jo->GetOsdObject (), a->cfg_.roi.x,
+    //         a->cfg_.roi.y, a->cfg_.roi.width, a->cfg_.roi.height);
 
-        jos->push_back(jo);
-    }
+    //     jos->push_back(jo);
+    // }
 
     a->cb_put_results_ (jos, datas, a->cb_user_data_);
 

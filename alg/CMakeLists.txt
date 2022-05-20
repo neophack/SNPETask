@@ -15,6 +15,14 @@ target_link_libraries(AlgYolov5s
     TSYolov5s
 )
 
+target_include_directories(AlgYolov5s
+    PUBLIC
+    ${GST_INCLUDE_DIRS}
+    ${GLIB_INCLUDE_DIRS}
+    ${JSON_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+)
+
 install(
     TARGETS AlgYolov5s
     LIBRARY DESTINATION /opt/thundersoft/algs/lib
