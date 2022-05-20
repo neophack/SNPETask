@@ -4,7 +4,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-18 16:51:10
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-19 11:51:00
+ * @LastEditTime: 2022-05-20 17:11:57
  */
 
 /*
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
         TS_INFO_LOG("result size: %ld", vec_res.size());
 
         for (size_t j = 0; j < vec_res.size(); j++) {
-            ts::ObjectData rect = vec_res[i];
+            ts::ObjectData rect = vec_res[j];
             TS_INFO_LOG("[%d, %d, %d, %d, %f, %d]", rect.x, rect.y, rect.width, rect.height, rect.confidence, rect.label);
             cv::rectangle(img, cv::Rect(rect.x, rect.y, rect.width, rect.height), cv::Scalar(0, 255, 0), 3);
             cv::Point position = cv::Point(rect.x, rect.y - 10);
