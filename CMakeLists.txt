@@ -58,5 +58,10 @@ target_link_libraries(test-yolov5s
     TSYolov5s
 )
 
+install(
+    TARGETS TSYolov5s
+    LIBRARY DESTINATION /opt/thundersoft/algs/lib
+)
+
 #----------------------------------------------
 add_subdirectory(alg)

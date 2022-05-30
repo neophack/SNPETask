@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-19 11:08:17
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-23 02:51:15
+ * @LastEditTime: 2022-05-30 13:30:50
  */
 
 //
@@ -115,13 +115,13 @@ static bool parse_args(AlgConfig& config, const std::string& data)
             if (json_object_has_member(object, "nms-thresh")) {
                 gdouble n = json_object_get_double_member(object, "nms-thresh");
                 TS_INFO_MSG_V("\tnms-thresh:%f", n);
-                config.nmsThresh =(float)n;
+                config.nmsThresh = (float)n;
             }
 
             if (json_object_has_member(object, "conf-thresh")) {
                 gdouble c = json_object_get_double_member(object, "conf-thresh");
                 TS_INFO_MSG_V("\tconf-thresh:%f", c);
-                config.confThresh =(float)c;
+                config.confThresh = (float)c;
             }
 
             if (json_object_has_member(object, "roi")) {
@@ -153,7 +153,7 @@ static bool parse_args(AlgConfig& config, const std::string& data)
             }
         }
     } else {
-        TS_ERR_MSG_V("Failed to parse json string %s(%s)\n", 
+        TS_ERR_MSG_V("Failed to parse json string %s(%s)\n",
             error->message, data.c_str());
         g_error_free(error);
         goto done;
@@ -172,7 +172,7 @@ done:
 //
 static JsonObject* results_to_json_object(const std::vector<ts::ObjectData>& results, void* alg)
 {
-    AlgCore* a =(AlgCore*)alg;
+    AlgCore* a = (AlgCore*)alg;
     JsonObject* result = json_object_new();
     JsonArray*  jarray = json_array_new();
     JsonObject* jobject = NULL;
@@ -263,7 +263,7 @@ void* algInit(const std::string& args)
         goto done;
     }
 
-    return(void*) a;
+    return (void*)a;
 
 done:
     if (a->alg_) {
@@ -291,7 +291,7 @@ bool algStart(void* alg)
 std::shared_ptr<TsJsonObject> algProc(
     void* alg, const std::shared_ptr<TsGstSample>& data)
 {
-    AlgCore* a =(AlgCore*) alg;
+    AlgCore* a = (AlgCore*)alg;
 
     //TS_INFO_MSG_V("algProc called");
 
@@ -318,7 +318,7 @@ std::shared_ptr<TsJsonObject> algProc(
 
     std::vector<ts::ObjectData> results;
     if (!a->alg_->Detect(image, results)) {
-        TS_WARN_MSG_V("Failed to detect face in the image"); 
+        TS_WARN_MSG_V("Failed to detect face in the image");
         //return NULL;
     }
 
@@ -331,12 +331,12 @@ std::shared_ptr<TsJsonObject> algProc(
     return nullptr;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<TsJsonObject>>> algProc2(void* alg, 
+std::shared_ptr<std::vector<std::shared_ptr<TsJsonObject>>> algProc2(void* alg,
     const std::shared_ptr<std::vector<std::shared_ptr<TsGstSample>>>& datas)
 {
     // TS_INFO_MSG_V("algProc2 called");
 
-    AlgCore* a =(AlgCore*) alg;
+    AlgCore* a = (AlgCore*)alg;
 
     //TS_INFO_MSG_V("algProc called");
 
@@ -347,7 +347,7 @@ std::shared_ptr<std::vector<std::shared_ptr<TsJsonObject>>> algProc2(void* alg,
     }
 
     // for (size_t i = 0; i < datas->size(); i++) {
-    //     GstSample* sample =(*datas)[i]->GetSample();
+    //     GstSample* sample = (*datas)[i]->GetSample();
 
     //     gint width, height, type = TYPE_RGB_U8;
     //     GstCaps* caps = gst_sample_get_caps(sample);
@@ -371,7 +371,7 @@ std::shared_ptr<std::vector<std::shared_ptr<TsJsonObject>>> algProc2(void* alg,
 
     //     std::vector<ts::ObjectData> results;
     //     if (!a->alg_->Detect(images, results)) {
-    //         TS_WARN_MSG_V("Failed to detect person in the image"); 
+    //         TS_WARN_MSG_V("Failed to detect person in the image");
     //         return NULL;
     //     }
 
@@ -411,7 +411,7 @@ void algStop(void* alg)
 //
 void algFina(void* alg)
 {
-    AlgCore* a =(AlgCore*) alg;
+    AlgCore* a = (AlgCore*)alg;
 
     TS_INFO_MSG_V("algFina called");
 
@@ -427,7 +427,7 @@ bool algSetCb(void* alg, TsPutResult cb, void* args)
 {
     // TS_INFO_MSG_V("algSetCb called");
 
-    AlgCore* a =(AlgCore*) alg;
+    AlgCore* a = (AlgCore*)alg;
     assert(a);
 
     if (cb) {
@@ -445,7 +445,7 @@ bool algSetCb2(void* alg, TsPutResults cb, void* args)
 {
     // TS_INFO_MSG_V("algSetCb2 called");
 
-    AlgCore* a =(AlgCore*) alg;
+    AlgCore* a = (AlgCore*)alg;
     assert(a);
 
     if (cb) {

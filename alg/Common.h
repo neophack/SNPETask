@@ -193,8 +193,7 @@ private:
 //
 typedef enum _TsObjectType {
     OBJECT,
-    ROI,
-    TEXT
+    ROI
 } TsObjectType;
 
 //
@@ -246,10 +245,6 @@ public:
         return type_ == TsObjectType::OBJECT;
     }
 
-    bool IsText (void) {
-        return type_ == TsObjectType::TEXT;
-    }
-
 public:
     //-----------------------------------------------
     TsObjectType  type_     { TsObjectType::OBJECT };
@@ -286,7 +281,7 @@ public:
             json_object_unref (object_);
         } 
         if (result_) {
-            json_object_unref (result_);
+	        json_object_unref (result_);
         }
     }
    

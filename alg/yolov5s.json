@@ -1,6 +1,6 @@
 {
     "name":"yolov5s",
-    "lib":"/opt/thundersoft/algs/lib/libAlgFaceDetector.so",
+    "lib":"/opt/thundersoft/algs/lib/libAlgYolov5s.so",
     "config":{
       "model-path":"/opt/thundersoft/algs/model/yolov5s.dlc",
       "label-path":"/opt/thundersoft/configs/yolov5s.txt",
