@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:28:01
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-19 02:50:21
+ * @LastEditTime: 2022-06-10 07:51:48
  */
 
 #include <memory>
@@ -74,6 +74,5 @@ private:
     std::unordered_map<std::string, float*> m_inputTensors;
     std::unordered_map<std::string, float*> m_outputTensors;
 };
-
 
 }   // namespace snpetask

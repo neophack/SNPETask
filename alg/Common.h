@@ -134,7 +134,7 @@ public:
         format = format_;
         return buffer_;
     }
-    
+
     GstBuffer* RefBuffer (
         int&         width, 
         int&         height, 
@@ -275,7 +275,7 @@ public:
         size_t size = 2) {
         result_ = result;
     }
-    
+
    ~TsJsonObject () {
         if (object_) {
             json_object_unref (object_);
@@ -284,7 +284,7 @@ public:
 	        json_object_unref (result_);
         }
     }
-   
+
     enum class Level { 
         RESULT  = 0,
         NOTICE  = 5,

@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-19 11:08:17
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-30 13:30:50
+ * @LastEditTime: 2022-06-10 07:49:51
  */
 
 //
@@ -78,7 +78,7 @@ static bool parse_args(AlgConfig& config, const std::string& data)
         return FALSE;
     }
 
-    if (json_parser_load_from_data(parser,(const gchar *) data.data(), 
+    if (json_parser_load_from_data(parser,(const gchar *) data.data(),
         data.length(), &error)) {
         if (!(root = json_parser_get_root(parser))) {
             TS_ERR_MSG_V("Failed to get root node from JsonParser");
@@ -203,10 +203,10 @@ static JsonObject* results_to_json_object(const std::vector<ts::ObjectData>& res
             std::to_string(results[i].height).c_str());
         json_array_add_object_element(jarray, jobject);
     }
-    
+
     json_object_set_string_member(result, "alg-name", "yolov5s");
     json_object_set_array_member (result, "alg-result", jarray);
-    
+
     return result;
 }
 

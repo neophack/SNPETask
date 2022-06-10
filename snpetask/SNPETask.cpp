@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-18 09:48:36
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-20 17:13:35
+ * @LastEditTime: 2022-06-10 07:51:39
  */
 
 
@@ -266,7 +266,5 @@ bool SNPETask::execute()
 
     return true;
 }
-
-
 
 }   // namespace snpetask
