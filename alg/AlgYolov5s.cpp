@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-19 11:08:17
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-06-10 07:49:51
+ * @LastEditTime: 2022-07-04 15:09:43
  */
 
 //
@@ -109,7 +109,7 @@ static bool parse_args(AlgConfig& config, const std::string& data)
                 std::string r((const char*)json_object_get_string_member(
                     object, "label-path"));
                 TS_INFO_MSG_V("\tlabel-path:%s", r.c_str());
-                config.runtime = string2runtime(r);                
+                config.labelPath = string2runtime(r);                
             }
 
             if (json_object_has_member(object, "nms-thresh")) {
@@ -167,12 +167,23 @@ done:
     return ret;
 }
 
+static bool result_in_roi (const ts::ObjectData& result, const ts::TSRect_T<int>& roi)
+{
+    if (result.x >= roi.x && result.y >= roi.y &&
+            result.x + result.width <= roi.x + roi.width &&
+            result.y + result.height <= roi.y + roi.height) {
+        return true;
+    }
+
+    return false;
+}
+
 //
 // results_to_json_object
 //
 static JsonObject* results_to_json_object(const std::vector<ts::ObjectData>& results, void* alg)
 {
-    AlgCore* a = (AlgCore*)alg;
+    AlgCore* a = static_cast<AlgCore*>(alg);
     JsonObject* result = json_object_new();
     JsonArray*  jarray = json_array_new();
     JsonObject* jobject = NULL;
@@ -183,6 +194,9 @@ static JsonObject* results_to_json_object(const std::vector<ts::ObjectData>& res
     }
 
     for (int i = 0; i <(int)results.size(); i ++) {
+        if (!(result_in_roi (results[i], a->cfg_.roi)))
+            continue;
+
         if (!(jobject = json_object_new())) {
             TS_ERR_MSG_V("Failed to new a object with type JsonObject");
             json_array_unref(jarray);
@@ -219,14 +233,16 @@ static void results_to_osd_object(const std::vector<ts::ObjectData>& results,
     bool alarm = false;
 
     for (int i = 0; i <(int)results.size(); i ++) {
-        std::string text("yolov5s");
+        if (!(result_in_roi (results[i], a->cfg_.roi)))
+            continue;
+
+        std::string text = a->labels_[results[i].label];
         osd.push_back(TsOsdObject((int)results[i].x,
             (int)results[i].y,(int)results[i].width,
             (int)results[i].height, 0, 255, 0,
             0, text, TsObjectType::OBJECT));
     }
 }
-
 
 //
 // algInit
@@ -291,7 +307,7 @@ bool algStart(void* alg)
 std::shared_ptr<TsJsonObject> algProc(
     void* alg, const std::shared_ptr<TsGstSample>& data)
 {
-    AlgCore* a = (AlgCore*)alg;
+    AlgCore* a = static_cast<AlgCore*>(alg);
 
     //TS_INFO_MSG_V("algProc called");
 
@@ -331,20 +347,20 @@ std::shared_ptr<TsJsonObject> algProc(
     return nullptr;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<TsJsonObject>>> algProc2(void* alg,
-    const std::shared_ptr<std::vector<std::shared_ptr<TsGstSample>>>& datas)
-{
+// std::shared_ptr<std::vector<std::shared_ptr<TsJsonObject>>> algProc2(void* alg,
+//     const std::shared_ptr<std::vector<std::shared_ptr<TsGstSample>>>& datas)
+// {
     // TS_INFO_MSG_V("algProc2 called");
 
-    AlgCore* a = (AlgCore*)alg;
+    // AlgCore* a = static_cast<AlgCore*>(alg);
 
     //TS_INFO_MSG_V("algProc called");
 
-    std::shared_ptr<std::vector<std::shared_ptr<TsJsonObject>>> jos;
-    if (!(jos = std::make_shared<std::vector<std::shared_ptr<TsJsonObject>>>())) {
-        TS_ERR_MSG_V("Failed to create a new object with type std::vector");
-        return nullptr;
-    }
+    // std::shared_ptr<std::vector<std::shared_ptr<TsJsonObject>>> jos;
+    // if (!(jos = std::make_shared<std::vector<std::shared_ptr<TsJsonObject>>>())) {
+    //     TS_ERR_MSG_V("Failed to create a new object with type std::vector");
+    //     return nullptr;
+    // }
 
     // for (size_t i = 0; i < datas->size(); i++) {
     //     GstSample* sample = (*datas)[i]->GetSample();
@@ -383,10 +399,10 @@ std::shared_ptr<std::vector<std::shared_ptr<TsJsonObject>>> algProc2(void* alg,
     //     jos->push_back(jo);
     // }
 
-    a->cb_put_results_(jos, datas, a->cb_user_data_);
+//     a->cb_put_results_(jos, datas, a->cb_user_data_);
 
-    return nullptr;
-}
+//     return nullptr;
+// }
 
 //
 // algCtrl
@@ -411,7 +427,7 @@ void algStop(void* alg)
 //
 void algFina(void* alg)
 {
-    AlgCore* a = (AlgCore*)alg;
+    AlgCore* a = static_cast<AlgCore*>(alg);
 
     TS_INFO_MSG_V("algFina called");
 
@@ -427,7 +443,7 @@ bool algSetCb(void* alg, TsPutResult cb, void* args)
 {
     // TS_INFO_MSG_V("algSetCb called");
 
-    AlgCore* a = (AlgCore*)alg;
+    AlgCore* a = static_cast<AlgCore*>(alg);
     assert(a);
 
     if (cb) {
@@ -445,7 +461,7 @@ bool algSetCb2(void* alg, TsPutResults cb, void* args)
 {
     // TS_INFO_MSG_V("algSetCb2 called");
 
-    AlgCore* a = (AlgCore*)alg;
+    AlgCore* a = static_cast<AlgCore*>(alg);
     assert(a);
 
     if (cb) {
