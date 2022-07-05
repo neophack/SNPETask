@@ -5,11 +5,11 @@
  * except in compliance with THUNDERCOMM in writing by applicable law.
  * 
  * @Description: Initilize version of encapsulation of object-deteciton algorithm developed on SNPE.
- * @version: 1.0
+ * @version: 1.1
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-19 11:08:17
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-07-05 10:32:46
+ * @LastEditTime: 2022-07-05 02:41:25
  */
 
 //
@@ -214,13 +214,14 @@ static JsonObject* results_to_json_object(const std::vector<ts::ObjectData>& res
 // results_to_osd_object
 //
 static void results_to_osd_object(const std::vector<ts::ObjectData>& results,
-    std::vector<TsOsdObject>& osd, int x, int y, int width, int height)
+    std::vector<TsOsdObject>& osd, void* alg)
 {
+    AlgCore* a = static_cast<AlgCore*>(alg);
+
     for (int i = 0; i <(int)results.size(); i ++) {
         std::string text = a->labels_[results[i].label];
-        osd.push_back(TsOsdObject((int)results[i].x,
-            (int)results[i].y,(int)results[i].width,
-            (int)results[i].height, 0, 255, 0,
+        osd.push_back(TsOsdObject((int)results[i].x, (int)results[i].y,
+            (int)results[i].width, (int)results[i].height, 0, 255, 0,
             0, text, TsObjectType::OBJECT));
     }
 
@@ -330,8 +331,7 @@ std::shared_ptr<TsJsonObject> algProc(
 
     std::shared_ptr<TsJsonObject> jo = std::make_shared<
         TsJsonObject>(results_to_json_object(results, a));
-    results_to_osd_object(results, jo->GetOsdObject(), a->cfg_.roi.x,
-        a->cfg_.roi.y, a->cfg_.roi.width, a->cfg_.roi.height);
+    results_to_osd_object(results, jo->GetOsdObject(), a);
 
     a->cb_put_result_(jo, data, a->cb_user_data_);
     return nullptr;

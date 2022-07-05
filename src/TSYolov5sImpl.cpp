@@ -5,11 +5,11 @@
  * except in compliance with THUNDERCOMM in writing by applicable law.
  * 
  * @Description: Implementation of object detection algorithm handler.
- * @version: 1.0
+ * @version: 1.1
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:28:01
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-07-05 10:34:46
+ * @LastEditTime: 2022-07-05 02:42:09
  */
 
 #include <math.h>

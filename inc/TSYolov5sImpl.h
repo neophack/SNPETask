@@ -5,11 +5,11 @@
  * except in compliance with THUNDERCOMM in writing by applicable law.
  * 
  * @Description: Object detection algorithm handler.
- * @version: 1.0
+ * @version: 1.1
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:27:51
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-07-05 10:33:49
+ * @LastEditTime: 2022-07-05 02:41:36
  */
 
 #ifndef __TS_FACE_DETECTION_IMPL_H__
@@ -45,6 +45,11 @@ public:
     bool SetScoreThresh(const float& conf_thresh, const float& nms_thresh = 0.5) noexcept {
         this->m_nmsThresh  = nms_thresh;
         this->m_confThresh = conf_thresh;
+        return true;
+    }
+
+    bool SetROI(const ts::TSRect_T<int>& roi) {
+        m_roi = roi;
         return true;
     }
 

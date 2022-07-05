@@ -5,11 +5,11 @@
  * except in compliance with THUNDERCOMM in writing by applicable law.
  * 
  * @Description: Initilize version of encapsulation of object-deteciton algorithm developed on SNPE.
- * @version: 1.0
+ * @version: 1.1
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-19 11:08:17
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-19 11:13:16
+ * @LastEditTime: 2022-07-05 02:41:28
  */
 
 #ifndef __TS_OBJECT_FACE_DETECTION_H__

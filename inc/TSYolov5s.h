@@ -5,11 +5,11 @@
  * except in compliance with THUNDERCOMM in writing by applicable law.
  * 
  * @Description: Abstraction of yolov5s object detection algorithm inference APIs.
- * @version: 1.0
+ * @version: 1.1
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:26:39
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-07-05 10:33:30
+ * @LastEditTime: 2022-07-05 02:41:50
  */
 
 #ifndef __TS_YOLOV5S_H__
