@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:28:01
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-20 17:12:16
+ * @LastEditTime: 2022-07-05 10:34:46
  */
 
 #include <math.h>
@@ -118,7 +118,12 @@ bool TSObjectDetectionImpl::Detect(const ts::TSImgData& image,
     std::vector<ts::ObjectData>& results)
 {
 
-    PreProcess(image);
+    if (m_roi.empty()) {
+        PreProcess(image);
+    } else {
+        auto roi_image = image.roi(m_roi);
+        PreProcess(roi_image);
+    }
 
     if (!m_task->execute()) {
         TS_ERROR_LOG("SNPETask execute failed.");
@@ -220,6 +225,10 @@ bool TSObjectDetectionImpl::PostProcess(std::vector<ts::ObjectData> &results)
 
     for (size_t i = 0; i < winList.size(); i++) {
         if (winList[i].width >= m_minBoxBorder || winList[i].height >= m_minBoxBorder) {
+            if (!m_roi.empty()) {
+                winList[i].x += m_roi.x;
+                winList[i].y += m_roi.y;
+            }
             results.push_back(winList[i]);
         }
     }

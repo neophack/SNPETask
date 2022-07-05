@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:26:56
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 14:37:51
+ * @LastEditTime: 2022-07-05 10:34:04
  */
 
 #include <unistd.h>
@@ -71,6 +71,16 @@ bool TSObjectDetection::SetScoreThreshold(const float& conf_thresh, const float&
 {
     if (nullptr != impl) {
         return static_cast<TSObjectDetectionImpl*>(impl)->SetScoreThresh(conf_thresh, nms_thresh);
+    } else {
+        TS_ERROR_LOG("TSObjectDetection::setScoreThresh failed because incompleted initialization!");
+        return false;
+    }
+}
+
+bool TSObjectDetection::SetROI(const ts::TSRect_T<int>& roi)
+{
+    if (nullptr != impl) {
+        return static_cast<TSObjectDetectionImpl*>(impl)->SetROI(roi);
     } else {
         TS_ERROR_LOG("TSObjectDetection::setScoreThresh failed because incompleted initialization!");
         return false;

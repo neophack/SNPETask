@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:27:51
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-19 01:47:19
+ * @LastEditTime: 2022-07-05 10:33:49
  */
 
 #ifndef __TS_FACE_DETECTION_IMPL_H__
@@ -100,6 +100,7 @@ private:
     std::vector<std::string> m_outputLayers;
     std::vector<std::string> m_outputTensors;
 
+    ts::TSRect_T<int> m_roi = {0, 0, 0, 0};
     float* m_output;
     uint32_t m_minBoxBorder = 16;
     float m_nmsThresh = 0.5f;

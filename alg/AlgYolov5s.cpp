@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-19 11:08:17
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-07-04 15:09:43
+ * @LastEditTime: 2022-07-05 10:32:46
  */
 
 //
@@ -167,17 +167,6 @@ done:
     return ret;
 }
 
-static bool result_in_roi (const ts::ObjectData& result, const ts::TSRect_T<int>& roi)
-{
-    if (result.x >= roi.x && result.y >= roi.y &&
-            result.x + result.width <= roi.x + roi.width &&
-            result.y + result.height <= roi.y + roi.height) {
-        return true;
-    }
-
-    return false;
-}
-
 //
 // results_to_json_object
 //
@@ -194,9 +183,6 @@ static JsonObject* results_to_json_object(const std::vector<ts::ObjectData>& res
     }
 
     for (int i = 0; i <(int)results.size(); i ++) {
-        if (!(result_in_roi (results[i], a->cfg_.roi)))
-            continue;
-
         if (!(jobject = json_object_new())) {
             TS_ERR_MSG_V("Failed to new a object with type JsonObject");
             json_array_unref(jarray);
@@ -230,18 +216,17 @@ static JsonObject* results_to_json_object(const std::vector<ts::ObjectData>& res
 static void results_to_osd_object(const std::vector<ts::ObjectData>& results,
     std::vector<TsOsdObject>& osd, int x, int y, int width, int height)
 {
-    bool alarm = false;
-
     for (int i = 0; i <(int)results.size(); i ++) {
-        if (!(result_in_roi (results[i], a->cfg_.roi)))
-            continue;
-
         std::string text = a->labels_[results[i].label];
         osd.push_back(TsOsdObject((int)results[i].x,
             (int)results[i].y,(int)results[i].width,
             (int)results[i].height, 0, 255, 0,
             0, text, TsObjectType::OBJECT));
     }
+
+    osd.push_back(TsOsdObject(a->cfg_.roi.x, a->cfg_.roi.y, 
+        a->cfg_.roi.width, a->cfg_.roi.height, 0, 
+        255, 0, 0, std::string(""), TsObjectType::ROI));
 }
 
 //
@@ -276,6 +261,11 @@ void* algInit(const std::string& args)
     if (!a->alg_->SetScoreThreshold(a->cfg_.confThresh, a->cfg_.nmsThresh)) {
         TS_ERR_MSG_V("Failed to set score thresh(%f, %f)",
             a->cfg_.confThresh, a->cfg_.nmsThresh);
+        goto done;
+    }
+
+    if (!a->alg_->SetROI(a->cfg_.roi)) {
+        TS_ERR_MSG_V("Failed to set ROI.");
         goto done;
     }
 

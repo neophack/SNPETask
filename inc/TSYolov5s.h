@@ -9,7 +9,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-17 20:26:39
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-18 09:31:30
+ * @LastEditTime: 2022-07-05 10:33:30
  */
 
 #ifndef __TS_YOLOV5S_H__
@@ -88,6 +88,14 @@ public:
      * @return {bool} true if setter successfully, false if failed.
      */
     bool SetScoreThreshold(const float& conf_thresh, const float& nms_thresh);
+
+    /**
+     * @brief: Set up monitoring area. The whole image is used as the monitoring area, if ROI is not set.
+     * @Author: Ricardo Lu
+     * @param {ts::TSRect_T<int>&} Monitoring interested region
+     * @return {bool} true if setter successfully, false if failed.
+     */    
+    bool SetROI(const ts::TSRect_T<int>& roi);
 
     /**
      * @brief: Core method of object detection.
