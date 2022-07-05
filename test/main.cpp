@@ -4,7 +4,7 @@
  * @Author: Ricardo Lu<sheng.lu@thundercomm.com>
  * @Date: 2022-05-18 16:51:10
  * @LastEditors: Ricardo Lu
- * @LastEditTime: 2022-05-20 10:16:46
+ * @LastEditTime: 2022-07-05 02:44:04
  */
 
 #include <string>
@@ -77,6 +77,28 @@ static bool validateModelPath(const char* name, const std::string& value)
 DEFINE_string(model_path, "./yolov5s.dlc", "DLC file path.");
 DEFINE_validator(model_path, &validateModelPath);
 
+DEFINE_string(device, "CPU", "DLC runtime device.");
+DEFINE_double(confidence, 0.5, "Confidence Threshold.");
+DEFINE_double(nms, 0.5, "NMS Threshold.");
+
+static runtime_t device2runtime(std::string & device)
+{
+    std::transform(device.begin(), device.end(), device.begin(),
+        [](unsigned char ch){ return tolower(ch); });
+
+    if (0 == device.compare("cpu")) {
+        return CPU;
+    } else if (0 == device.compare("gpu")) {
+        return GPU;
+    } else if (0 == device.compare("dsp")) {
+        return DSP;
+    } else if (0 == device.compare("aip")) {
+        return AIP;
+    } else { 
+        return CPU;
+    }
+}
+
 int main(int argc, char* argv[])
 {
     google::ParseCommandLineFlags(&argc, &argv, true);
@@ -91,7 +113,8 @@ int main(int argc, char* argv[])
     std::vector<std::shared_ptr<ts::TSObjectDetection> > vec_alg;
     for (int i = 0; i < 1; i++) {
         std::shared_ptr<ts::TSObjectDetection> alg = std::shared_ptr<ts::TSObjectDetection>(new ts::TSObjectDetection());
-        alg->Init(FLAGS_model_path, DSP);
+        alg->Init(FLAGS_model_path, device2runtime(FLAGS_device));
+        alg->SetScoreThreshold(FLAGS_confidence, FLAGS_nms);
         vec_alg.push_back(alg);
     }
 
